@@ -14,6 +14,8 @@ interface ApiResponse {
   messages: Message[];
 }
 
+const API_URL = 'http://localhost:5001/api/penzi/messages';  // Ensure this exact URL is used
+
 export default function MessageList() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,11 +24,22 @@ export default function MessageList() {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const { data } = await axios.get<ApiResponse>('http://localhost:5001/api/messages');
+        setLoading(true);
+        const response = await fetch('http://localhost:5001/api/penzi/messages', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          mode: 'cors'  // Explicitly set CORS mode
+        });
+        const data = await response.json();
+        console.log('Fetch response:', data);
         setMessages(data.messages);
-      } catch (err) {
-        setError('Failed to fetch messages');
-        console.error(err);
+        setError(null);
+      } catch (error: any) {
+        console.error('Error:', error);
+        setError(`Failed to load messages: ${error.message}`);
       } finally {
         setLoading(false);
       }

@@ -1,8 +1,8 @@
 'use client';
 import React from 'react';
 import { useState } from 'react';
-import UserList from '../components/UserList';
-import MessageList from '../components/MessageList';
+import UserList from '@/src/components/UserList';
+import MessageList from '@/src/components/MessageList';
 import Dashboard from '../src/components/Dashboard';
 
 export default function Home() {

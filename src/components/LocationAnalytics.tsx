@@ -25,10 +25,10 @@ export default function LocationAnalytics() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchLocationData = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:5001/api/location-analytics');
+        const response = await axios.get('http://localhost:5001/api/penzi/location-analytics');
         console.log('Location data:', response.data); // Debug log
         setData(response.data);
         setError(null);
@@ -40,7 +40,7 @@ export default function LocationAnalytics() {
       }
     };
 
-    fetchLocationData();
+    fetchData();
   }, []);
 
   if (loading) return <div>Loading location data...</div>;

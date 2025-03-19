@@ -22,9 +22,10 @@ interface User {
 
 interface Message {
   id: number;
-  direction: 'Incoming' | 'Outgoing';
-  text: string;
+  message_text: string;
+  message_direction: 'incoming' | 'outgoing';
   created_at: string;
+  user_id: number;
 }
 
 interface ApiResponse {
@@ -104,41 +105,39 @@ const UserDetailsModal = ({ user, onClose }: { user: User; onClose: () => void }
         </div>
 
         {/* Additional Details */}
-        {user.details && (
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-gray-900 mb-3">Additional Details</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Education</p>
-                <p className="text-gray-900">{user.details.education || 'Not specified'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Profession</p>
-                <p className="text-gray-900">{user.details.profession || 'Not specified'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Marital Status</p>
-                <p className="text-gray-900">{user.details.marital_status || 'Not specified'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Religion</p>
-                <p className="text-gray-900">{user.details.religion || 'Not specified'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Ethnicity</p>
-                <p className="text-gray-900">{user.details.ethnicity || 'Not specified'}</p>
-              </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h3 className="font-semibold text-gray-900 mb-3">Additional Details</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-gray-500">Education</p>
+              <p className="text-gray-900">{user.details?.education || 'Not specified'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Profession</p>
+              <p className="text-gray-900">{user.details?.profession || 'Not specified'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Marital Status</p>
+              <p className="text-gray-900">{user.details?.marital_status || 'Not specified'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Religion</p>
+              <p className="text-gray-900">{user.details?.religion || 'Not specified'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Ethnicity</p>
+              <p className="text-gray-900">{user.details?.ethnicity || 'Not specified'}</p>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Self Description */}
-        {user.description && (
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-gray-900 mb-3">Self Description</h3>
-            <p className="text-gray-900 whitespace-pre-wrap">{user.description}</p>
-          </div>
-        )}
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h3 className="font-semibold text-gray-900 mb-3">Self Description</h3>
+          <p className="text-gray-900 whitespace-pre-wrap">
+            {user.description || 'No self description provided'}
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -159,42 +158,39 @@ const UserMessagesModal = ({ user, messages, onClose }: {
     >
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-gray-900">{user.name}'s Messages</h2>
-        <button 
-          onClick={onClose}
-          className="text-gray-500 hover:text-gray-700 p-2"
-        >
-          ✕
-        </button>
+        <button onClick={onClose} className="text-gray-500 hover:text-gray-700 p-2">✕</button>
       </div>
       <div className="space-y-4">
         {messages.map((message) => {
-          const isIncoming = message.direction === 'Incoming';
+          const isFromUser = message.message_direction.toLowerCase() === 'incoming';
+          const formattedText = message.message_text.replace(/¶/g, '\n');
           
           return (
             <div 
               key={message.id}
               className={`p-4 rounded-lg ${
-                isIncoming
+                isFromUser
                   ? 'bg-blue-50 mr-4 border-l-4 border-blue-500'
                   : 'bg-green-50 ml-4 border-l-4 border-green-500'
               }`}
             >
               <div className="flex justify-between items-start">
-                <div>
+                <div className="flex-1">
                   <span className={`text-xs font-medium ${
-                    isIncoming ? 'text-blue-600' : 'text-green-600'
+                    isFromUser ? 'text-blue-600' : 'text-green-600'
                   } mb-1 block`}>
-                    {isIncoming ? '👤 Message from User' : '💬 Message from System'}
+                    {isFromUser 
+                      ? '👤 From User' 
+                      : '💬 From System'}
                   </span>
-                  <p className="text-gray-900">{message.text}</p>
+                  <p className="text-gray-900 whitespace-pre-line break-words">
+                    {formattedText}
+                  </p>
                 </div>
-                <span className="text-xs text-gray-500 ml-2">
+                <span className="text-xs text-gray-500 ml-2 shrink-0">
                   {new Date(message.created_at).toLocaleString()}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
-                {isIncoming ? '→ User to System' : '← System to User'}
-              </p>
             </div>
           );
         })}
@@ -216,17 +212,25 @@ export default function UserList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [showMessages, setShowMessages] = useState(false);
+  const [showUserDetails, setShowUserDetails] = useState(false);
 
   const fetchUsers = async () => {
     try {
-      const { data } = await axios.get<{ users: User[] }>('http://localhost:5001/api/users');
-      setUsers(data.users);
-      setFilteredUsers(data.users);
-    } catch (err) {
-      setError('Failed to fetch users');
-      console.error(err);
+      setLoading(true);
+      console.log('Starting user fetch...');
+      const response = await axios.get('http://localhost:5001/api/penzi/users');
+      console.log('User response:', response.data);
+      setUsers(response.data.users);
+      setFilteredUsers(response.data.users);
+    } catch (error) {
+      console.error('Fetch error details:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Request URL:', error.config?.url);
+      }
     } finally {
-      setLoading(false);
+      setLoading(false);  // This ensures loading is set to false even if there's an error
     }
   };
 
@@ -247,8 +251,32 @@ export default function UserList() {
   };
 
   const handleUserClick = async (user: User) => {
-    setSelectedUser(user);
-    await fetchUserMessages(user.id);
+    try {
+      console.log('Viewing messages for user:', {
+        id: user.id,
+        name: user.name
+      });
+      
+      setSelectedUser(user);
+      const response = await axios.get(`http://localhost:5001/api/penzi/users/${user.id}/messages`);
+      
+      console.log('API Response:', response.data);
+      
+      if (response.data.messages && response.data.messages.length > 0) {
+        console.log(`Found ${response.data.messages.length} messages`);
+        setUserMessages(response.data.messages);
+        setShowMessages(true);  // Make sure modal shows
+      } else {
+        console.log('No messages found in response');
+        setUserMessages([]);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Response data:', error.response?.data);
+      }
+      setUserMessages([]);
+    }
   };
 
   // Search and filter function
@@ -288,6 +316,62 @@ export default function UserList() {
       link.remove();
     } catch (error) {
       console.error('Failed to export users:', error);
+    }
+  };
+
+  const viewMessages = async (userId: number) => {
+    try {
+      console.log('Attempting to fetch messages for user:', userId);
+      // Log the exact URL being called
+      const url = `http://localhost:5001/api/penzi/users/${userId}/messages`;
+      console.log('Requesting URL:', url);
+      
+      const response = await axios.get(url);
+      console.log('Full API Response:', response);
+      console.log('Messages data:', response.data);
+      
+      if (response.data.messages) {
+        console.log('Number of messages found:', response.data.messages.length);
+        setUserMessages(response.data.messages);
+        setSelectedUserId(userId);
+        setShowMessages(true);
+      } else {
+        console.log('No messages array in response');
+        setUserMessages([]);
+      }
+    } catch (error) {
+      console.error('Detailed error:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Response status:', error.response?.status);
+        console.error('Response data:', error.response?.data);
+      }
+      setUserMessages([]);
+    }
+  };
+
+  const viewUserDetails = async (user: User) => {
+    try {
+      console.log('View Details clicked for user:', user);
+      
+      const url = `http://localhost:5001/api/penzi/users/${user.id}`;
+      console.log('Fetching from URL:', url);
+      
+      const response = await axios.get(url);
+      console.log('Response received:', response);
+      
+      if (response.data) {
+        console.log('Setting viewing user with data:', response.data);
+        setViewingUser(response.data);
+        setShowUserDetails(true);
+      } else {
+        console.error('No data in response');
+      }
+    } catch (error) {
+      console.error('Error in viewUserDetails:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Response status:', error.response?.status);
+        console.error('Response data:', error.response?.data);
+      }
     }
   };
 
@@ -369,20 +453,23 @@ export default function UserList() {
                     Active
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm font-medium space-x-2">
-                  <button 
-                    onClick={() => setViewingUser(user)}
-                    className="text-indigo-600 hover:text-indigo-900"
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      console.log('View Details button clicked');
+                      viewUserDetails(user);
+                    }}
+                    className="text-indigo-600 hover:text-indigo-900 mr-4"
                   >
                     View Details
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleUserClick(user)}
-                    className="text-indigo-600 hover:text-indigo-900"
+                    className="text-green-600 hover:text-green-900"
                   >
                     View Messages
                   </button>
-                  
                 </td>
               </tr>
             ))}
@@ -393,17 +480,20 @@ export default function UserList() {
       {/* User Details Modal */}
       {viewingUser && (
         <UserDetailsModal 
-          user={viewingUser}
-          onClose={() => setViewingUser(null)}
+          user={viewingUser} 
+          onClose={() => setViewingUser(null)} 
         />
       )}
 
       {/* Messages Modal */}
-      {selectedUser && (
-        <UserMessagesModal 
+      {selectedUser && userMessages && (
+        <UserMessagesModal
           user={selectedUser}
           messages={userMessages}
-          onClose={() => setSelectedUser(null)}
+          onClose={() => {
+            setSelectedUser(null);
+            setUserMessages([]);
+          }}
         />
       )}
     </div>

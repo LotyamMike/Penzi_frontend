@@ -86,7 +86,7 @@ export default function Dashboard() {
     const fetchDashboardStats = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:5001/api/dashboard/stats');
+        const response = await axios.get('http://localhost:5001/api/penzi/dashboard/stats');
         setStats(response.data);
         setError(null);
       } catch (error) {
