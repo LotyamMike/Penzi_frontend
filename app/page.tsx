@@ -1,13 +1,28 @@
 'use client';
-import React from 'react';
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import UserList from '@/src/components/UserList';
 import MessageList from '@/src/components/MessageList';
 import Dashboard from '../src/components/Dashboard';
 
+interface Message {
+  id: number;
+  message_direction: string;
+  message_text: string;
+  created_at: string;
+}
+
 export default function Home() {
   const [view, setView] = useState<'dashboard' | 'users' | 'messages'>('dashboard');
-  
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  useEffect(() => {
+    if (view === 'messages') {
+      fetch('http://localhost:5001/api/messages')
+        .then(res => res.json())
+        .then(data => setMessages(data.messages || []));
+    }
+  }, [view]);
+
   return (
     <main className="min-h-screen bg-gray-100">
       <nav className="bg-white shadow-sm">
